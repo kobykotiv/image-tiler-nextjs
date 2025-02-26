@@ -7,7 +7,7 @@ export default function ImageProcessor() {
   const [progress, setProgress] = useState(0)
   const { files, setProcessedImages } = useImageContext()
 
-  const createTiledImage = (originalImage: HTMLImageElement, scale: number): string => {
+  const createThumbnail = (originalImage: HTMLImageElement, maxSize: number = 200): string => {
     const canvas = document.createElement("canvas")
     const ctx = canvas.getContext("2d")
 
@@ -15,16 +15,54 @@ export default function ImageProcessor() {
       throw new Error("Unable to create canvas context")
     }
 
-    canvas.width = originalImage.width * scale
-    canvas.height = originalImage.height * scale
+    const ratio = Math.min(maxSize / originalImage.width, maxSize / originalImage.height)
+    canvas.width = originalImage.width * ratio
+    canvas.height = originalImage.height * ratio
 
-    for (let y = 0; y < canvas.height; y += originalImage.height) {
-      for (let x = 0; x < canvas.width; x += originalImage.width) {
-        ctx.drawImage(originalImage, x, y)
+    ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height)
+
+    return canvas.toDataURL("image/jpeg", 0.7) // Using JPEG with 70% quality for thumbnails
+  }
+
+  const createTiledImage = (originalImage: HTMLImageElement, scale: number, isThumbnail: boolean = false): string => {
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
+
+    if (!ctx) {
+      throw new Error("Unable to create canvas context")
+    }
+
+    // For thumbnails, scale down the base size
+    const baseWidth = isThumbnail ? Math.min(originalImage.width, 100) : originalImage.width
+    const baseHeight = isThumbnail ? Math.min(originalImage.height, 100) : originalImage.height
+    
+    canvas.width = baseWidth * scale
+    canvas.height = baseHeight * scale
+
+    if (isThumbnail) {
+      // Scale down the original image first
+      const tempCanvas = document.createElement("canvas")
+      const tempCtx = tempCanvas.getContext("2d")
+      if (tempCtx) {
+        tempCanvas.width = baseWidth
+        tempCanvas.height = baseHeight
+        tempCtx.drawImage(originalImage, 0, 0, baseWidth, baseHeight)
+        
+        for (let y = 0; y < canvas.height; y += baseHeight) {
+          for (let x = 0; x < canvas.width; x += baseWidth) {
+            ctx.drawImage(tempCanvas, x, y)
+          }
+        }
+      }
+    } else {
+      for (let y = 0; y < canvas.height; y += originalImage.height) {
+        for (let x = 0; x < canvas.width; x += originalImage.width) {
+          ctx.drawImage(originalImage, x, y)
+        }
       }
     }
 
-    return canvas.toDataURL("image/png")
+    return canvas.toDataURL(isThumbnail ? "image/jpeg" : "image/png", isThumbnail ? 0.7 : 1)
   }
 
   const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -45,14 +83,23 @@ export default function ImageProcessor() {
         const originalUrl = URL.createObjectURL(file)
         const img = await loadImage(originalUrl)
 
+        // Create thumbnail for original image
+        const thumbnail = createThumbnail(img)
+
+        // Create tiles with their thumbnails
         const tiles = await Promise.all(
           [2, 4, 6, 8, 16].map(async (scale) => ({
             scale,
-            url: createTiledImage(img, scale),
-          })),
+            url: createTiledImage(img, scale, false),
+            thumbnail: createTiledImage(img, scale, true)
+          }))
         )
 
-        processedImages.push({ original: originalUrl, tiles })
+        processedImages.push({
+          original: originalUrl,
+          thumbnail,
+          tiles
+        })
         setProgress(((i + 1) / files.length) * 100)
       } catch (error) {
         console.error(`Error processing image ${file.name}:`, error)

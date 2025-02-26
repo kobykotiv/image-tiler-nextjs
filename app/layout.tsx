@@ -2,9 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Image Tiler',
-  description: 'Crafted with Love',
-  generator: 'Next.js',
+  title: 'Image Tiler API',
+  description: 'Image tiling and transformation API documentation',
 }
 
 export default function RootLayout({
@@ -14,7 +13,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="bg-gray-50">
+        <main className="min-h-screen">{children}</main>
+      </body>
     </html>
   )
 }

@@ -18,13 +18,13 @@ export default function Home() {
             <h3 className="text-xl font-semibold mb-2">Image Tiler Tool</h3>
             <p className="text-gray-600">Create dynamic grid layouts of your images with our interactive tool.</p>
           </a>
-          <a
+          {/* <a
             href="/docs"
             className="block p-6 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
           >
             <h3 className="text-xl font-semibold mb-2">API Documentation</h3>
             <p className="text-gray-600">Integrate image tiling into your own applications.</p>
-          </a>
+          </a> */}
         </div>
       </section>
 

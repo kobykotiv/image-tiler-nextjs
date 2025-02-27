@@ -9,7 +9,7 @@ export function Navigation() {
   const links = [
     { href: "/", label: "Home" },
     { href: "/tiler", label: "Image Tiler" },
-    { href: "/docs", label: "API Docs" },
+    // { href: "/docs", label: "API Docs" },
   ]
 
   return (
